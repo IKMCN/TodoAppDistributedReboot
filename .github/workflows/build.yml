@@ -33,9 +33,9 @@ jobs:
       # Pick ONE of the following build commands (uncomment the one you use):
 
       # 1) Build the solution (recommended if you have a .sln at the repo root)
-      - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+      # - name: Build solution
+      #  run: dotnet build --configuration Release --no-restore
 
       # 2) OR build a specific project
-      # - name: Build TodoAPI project
-      #   run: dotnet build ToDoApplication/TodoAPI/TodoAPI.csproj --configuration Release --no-restore
+      - name: Build TodoAPI project
+        run: dotnet build ToDoApplication/TodoAPI/TodoAPI.csproj --configuration Release --no-restore
