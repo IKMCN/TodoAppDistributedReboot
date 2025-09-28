@@ -6,36 +6,25 @@ on:
   pull_request:
     branches: [ main ]
 
-# Cancel old runs on the same branch if you push again
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Show tree (debug paths)
+        run: |
+          pwd
+          ls -la
+          ls -la ToDoApplication || true
+          ls -la ToDoApplication/TodoAPI || true
+
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x' # change to 8.0.x if your project targets .NET 8
+          dotnet-version: '9.0.x'  # your project targets net9.0
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore ToDoApplication/TodoAPI/TodoAPI.csproj
 
-      # Pick ONE of the following build commands (uncomment the one you use):
-
-      # 1) Build the solution (recommended if you have a .sln at the repo root)
-      # - name: Build solution
-      #  run: dotnet build --configuration Release --no-restore
-
-      # 2) OR build a specific project
-      - name: Build TodoAPI project
+      - name: Build
         run: dotnet build ToDoApplication/TodoAPI/TodoAPI.csproj --configuration Release --no-restore
