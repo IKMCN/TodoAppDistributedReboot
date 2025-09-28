@@ -26,8 +26,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'  # your project targets net9.0
-          cache: true
+          dotnet-version: '9.0.x'   # or 8.0.x if you target that
 
       # Restore both API and test project
       - name: Restore
