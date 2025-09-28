@@ -28,3 +28,16 @@ jobs:
 
       - name: Build
         run: dotnet build ToDoApplication/TodoAPI/TodoAPI.csproj --configuration Release --no-restore
+
+        # after the Build step
+      - name: Publish (framework-dependent)
+        working-directory: ToDoApplication/TodoAPI
+        run: dotnet publish -c Release -o ../../artifacts/TodoAPI
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: todoapi-publish
+          path: artifacts/TodoAPI/**
+          if-no-files-found: error
+          retention-days: 7
