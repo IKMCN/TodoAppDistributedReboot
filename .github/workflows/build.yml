@@ -1,4 +1,4 @@
-name: Build (no tests)
+name: Build + Unit Tests
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      API_PROJ: ToDoApplication/TodoAPI/TodoAPI.csproj
+      TEST_PROJ: ToDoApplication/Todo.UnitTests/Todo.UnitTests.csproj
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,18 +22,44 @@ jobs:
           ls -la
           ls -la ToDoApplication || true
           ls -la ToDoApplication/TodoAPI || true
+          ls -la ToDoApplication/Todo.UnitTests || true
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'  # your project targets net9.0
+          cache: true
 
+      # Restore both API and test project
       - name: Restore
-        run: dotnet restore ToDoApplication/TodoAPI/TodoAPI.csproj
+        run: |
+          dotnet restore "$API_PROJ"
+          dotnet restore "$TEST_PROJ"
 
+      # Build both (no tests yet)
       - name: Build
-        run: dotnet build ToDoApplication/TodoAPI/TodoAPI.csproj --configuration Release --no-restore
+        run: |
+          dotnet build "$API_PROJ" --configuration Release --no-restore
+          dotnet build "$TEST_PROJ" --configuration Release --no-restore
 
-        # after the Build step
+      # ✅ Run unit tests (needs xUnit + your test project)
+      # Tip: for coverage, add package 'coverlet.collector' to your test project.
+      - name: Test
+        run: >
+          dotnet test "$TEST_PROJ"
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=test_results.trx"
+          --results-directory TestResults
+          --collect "XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: TestResults/**
+
+      # --- your existing publish/artifact steps ---
       - name: Publish (framework-dependent)
         working-directory: ToDoApplication/TodoAPI
         run: dotnet publish -c Release -o ../../artifacts/TodoAPI
