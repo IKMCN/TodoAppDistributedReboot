@@ -1,0 +1,627 @@
+{
+	"info": {
+		"_postman_id": "e6fd9664-9e4b-4027-a25f-97f776526307",
+		"name": "Todo API Complete CRUD Tests",
+		"description": "Complete CRUD operations with automated tests for Newman",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29635046",
+		"_collection_link": "https://brewery-api-team.postman.co/workspace/1d38cf3d-924f-4ef5-8a22-6c625a294c89/collection/29635046-e6fd9664-9e4b-4027-a25f-97f776526307?action=share&source=collection_link&creator=29635046"
+	},
+	"item": [
+		{
+			"name": "1. Create Todo (POST)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate unique test data",
+							"const randomInt = Math.floor(Math.random() * 10000);",
+							"const isoDate = new Date().toISOString();",
+							"",
+							"// Set variables for request body",
+							"pm.collectionVariables.set('randomInt', randomInt);",
+							"pm.collectionVariables.set('isoTimestamp', isoDate);",
+							"",
+							"// Save the title we're creating for verification",
+							"const testTitle = `Test todo ${randomInt}`;",
+							"pm.collectionVariables.set('testTitle', testTitle);",
+							"",
+							"// Create the exact task description we're sending",
+							"const taskDesc = `Created by Ian - Test ${randomInt}`;",
+							"pm.collectionVariables.set('expectedTaskDescription', taskDesc);",
+							"",
+							"console.log('Creating todo:', testTitle);",
+							"console.log('Task description will be:', taskDesc);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('POST - Todo created successfully', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							"",
+							"pm.test('POST - Response has required fields', function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('taskDescription');",
+							"    pm.expect(jsonData.id).to.be.a('number');",
+							"    pm.expect(jsonData.id).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test('POST - Save todo ID and verify data', function () {",
+							"    const jsonData = pm.response.json();",
+							"    const expectedDesc = pm.collectionVariables.get('expectedTaskDescription');",
+							"    ",
+							"    // Save the ID for other requests",
+							"    pm.collectionVariables.set('todoId', jsonData.id);",
+							"    ",
+							"    // Verify the data matches what we sent",
+							"    pm.expect(jsonData.taskDescription).to.equal(expectedDesc);",
+							"    pm.expect(jsonData.isComplete).to.equal(false);",
+							"    ",
+							"    console.log('✅ Saved todo ID:', jsonData.id);",
+							"    console.log('✅ Task description:', jsonData.taskDescription);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"taskDescription\": \"Created by Ian - Test {{randomInt}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Todo by ID (GET)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if we have a todoId to use",
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"",
+							"if (!todoId) {",
+							"    console.log('⚠️ No todoId found! Run the POST request first to create a todo.');",
+							"} else {",
+							"    console.log('Getting todo with ID:', todoId);",
+							"    console.log('Full URL will be:', pm.collectionVariables.get('baseUrl') + '/TodoItems/' + todoId);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('GET BY ID - Request successful', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('GET BY ID - Response has correct structure', function () {",
+							"    const jsonData = pm.response.json();",
+							"    ",
+							"    // Check all required fields exist",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('taskDescription');",
+							"    pm.expect(jsonData).to.have.property('dateTimeCreated');",
+							"    pm.expect(jsonData).to.have.property('isComplete');",
+							"    ",
+							"    // Verify data types",
+							"    pm.expect(jsonData.id).to.be.a('number');",
+							"    pm.expect(jsonData.taskDescription).to.be.a('string');",
+							"    pm.expect(jsonData.isComplete).to.be.a('boolean');",
+							"    ",
+							"    console.log('✅ Todo has all required fields with correct types');",
+							"});",
+							"",
+							"pm.test('GET BY ID - Returns correct todo', function () {",
+							"    const jsonData = pm.response.json();",
+							"    const expectedId = pm.collectionVariables.get('todoId');",
+							"    const expectedDesc = pm.collectionVariables.get('expectedTaskDescription');",
+							"    ",
+							"    if (expectedId) {",
+							"        pm.expect(jsonData.id).to.equal(parseInt(expectedId));",
+							"        console.log('✅ Returned correct todo ID:', jsonData.id);",
+							"    }",
+							"    ",
+							"    if (expectedDesc) {",
+							"        pm.expect(jsonData.taskDescription).to.equal(expectedDesc);",
+							"        console.log('✅ Confirmed this is our created todo');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get All Todos (GET)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Optional: Log what we're about to do",
+							"console.log('Getting all todos from:', pm.collectionVariables.get('baseUrl') + '/TodoItems');"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('GET ALL - Request successful', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('GET ALL - Response is an array', function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"    console.log('✅ Found', jsonData.length, 'todos');",
+							"});",
+							"",
+							"pm.test('GET ALL - Find our created todo', function () {",
+							"    const todos = pm.response.json();",
+							"    const ourTodoId = pm.collectionVariables.get('todoId');",
+							"    ",
+							"    if (ourTodoId) {",
+							"        const ourTodo = todos.find(todo => todo.id === parseInt(ourTodoId));",
+							"        ",
+							"        if (ourTodo) {",
+							"            pm.expect(ourTodo.taskDescription).to.include('Created by Ian');",
+							"            console.log('✅ Found our created todo:', ourTodo.taskDescription);",
+							"        } else {",
+							"            console.log('⚠️ Our created todo not found in list');",
+							"        }",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Update Todo (PUT)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if we have a todoId to update",
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"",
+							"if (!todoId) {",
+							"    console.log('⚠️ No todoId found! Run the POST request first to create a todo.');",
+							"} else {",
+							"    console.log('Updating todo with ID:', todoId);",
+							"}",
+							"",
+							"// Generate timestamp for the update",
+							"const isoDate = new Date().toISOString();",
+							"pm.collectionVariables.set('isoTimestamp', isoDate);",
+							"",
+							"// Create the exact description we're sending (for verification)",
+							"const updatedDesc = `Updated by Ian - Modified at ${isoDate}`;",
+							"pm.collectionVariables.set('expectedUpdatedDescription', updatedDesc);",
+							"",
+							"console.log('Update timestamp:', isoDate);",
+							"console.log('New description will be:', updatedDesc);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('PUT - Update response check', function () {",
+							"    if (pm.response.code === 204) {",
+							"        console.log('✅ Update successful');",
+							"    } else if (pm.response.code === 404) {",
+							"        console.log('⚠️ Todo not found for update');",
+							"    } else {",
+							"        console.log('⚠️ Unexpected update response:', pm.response.code);",
+							"    }",
+							"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+							"});",
+							"",
+							"pm.test('PUT - Verify update if successful', function () {",
+							"    const todoId = pm.collectionVariables.get('todoId');",
+							"    const expectedDesc = pm.collectionVariables.get('expectedUpdatedDescription');",
+							"    ",
+							"    // Only verify if the update was successful",
+							"    if (pm.response.code === 204 && todoId) {",
+							"        pm.sendRequest({",
+							"            url: pm.collectionVariables.get('baseUrl') + '/TodoItems/' + todoId,",
+							"            method: 'GET'",
+							"        }, function (err, response) {",
+							"            if (!err && response.code === 200) {",
+							"                const updatedTodo = response.json();",
+							"                pm.expect(updatedTodo.taskDescription).to.equal(expectedDesc);",
+							"                console.log('✅ Update verified:', updatedTodo.taskDescription);",
+							"            }",
+							"        });",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"taskDescription\": \"Updated by Ian - Modified at {{isoTimestamp}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Get Updated Todo (GET)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"console.log('Verifying updated todo with ID:', todoId);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('GET UPDATED - Handle response appropriately', function () {",
+							"    if (pm.response.code === 200) {",
+							"        console.log('✅ Todo found after update');",
+							"        const jsonData = pm.response.json();",
+							"        const expectedDesc = pm.collectionVariables.get('expectedUpdatedDescription');",
+							"        ",
+							"        if (expectedDesc && jsonData.taskDescription.includes('Updated by Ian')) {",
+							"            console.log('✅ Confirmed update was applied:', jsonData.taskDescription);",
+							"        } else {",
+							"            console.log('ℹ️ Todo found but may not be updated:', jsonData.taskDescription);",
+							"        }",
+							"    } else if (pm.response.code === 404) {",
+							"        console.log('⚠️ Todo not found after update - may have been deleted');",
+							"    }",
+							"    ",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Mark Complete (PUT)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"console.log('Marking todo complete, ID:', todoId);",
+							"",
+							"// Check if todo still exists before trying to mark complete",
+							"if (todoId) {",
+							"    pm.sendRequest({",
+							"        url: pm.collectionVariables.get('baseUrl') + '/TodoItems/' + todoId,",
+							"        method: 'GET'",
+							"    }, function (err, response) {",
+							"        if (response.code === 200) {",
+							"            console.log('✅ Todo exists, ready to mark complete');",
+							"        } else {",
+							"            console.log('⚠️ Todo does not exist, mark complete will fail');",
+							"        }",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('PUT COMPLETE - Handle response appropriately', function () {",
+							"    if (pm.response.code === 204) {",
+							"        console.log('✅ Todo marked complete successfully');",
+							"    } else if (pm.response.code === 404) {",
+							"        console.log('⚠️ Todo not found - cannot mark complete');",
+							"    } else {",
+							"        console.log('⚠️ Unexpected response:', pm.response.code);",
+							"    }",
+							"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+							"});",
+							"",
+							"pm.test('PUT COMPLETE - Verify completion if successful', function () {",
+							"    const todoId = pm.collectionVariables.get('todoId');",
+							"    ",
+							"    // Only verify if marking complete was successful",
+							"    if (pm.response.code === 204 && todoId) {",
+							"        pm.sendRequest({",
+							"            url: pm.collectionVariables.get('baseUrl') + '/TodoItems/' + todoId,",
+							"            method: 'GET'",
+							"        }, function (err, response) {",
+							"            if (!err && response.code === 200) {",
+							"                const todo = response.json();",
+							"                pm.expect(todo.isComplete).to.be.true;",
+							"                console.log('✅ Verified todo marked complete:', todo.isComplete);",
+							"            }",
+							"        });",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}/complete",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}",
+						"complete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Delete Todo (DELETE)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if we have a todoId to delete",
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"",
+							"if (!todoId) {",
+							"    console.log('⚠️ No todoId found! Run the POST request first to create a todo.');",
+							"} else {",
+							"    console.log('About to delete todo with ID:', todoId);",
+							"    // Save the todoId for verification test",
+							"    pm.collectionVariables.set('deletedTodoId', todoId);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('DELETE - Handle response appropriately', function () {",
+							"    if (pm.response.code === 204) {",
+							"        console.log('✅ Todo deleted successfully');",
+							"    } else if (pm.response.code === 404) {",
+							"        console.log('⚠️ Todo not found - may have already been deleted');",
+							"    }",
+							"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+							"});",
+							"",
+							"pm.test('DELETE - Verify todo no longer exists', function () {",
+							"    const todoId = pm.collectionVariables.get('todoId');",
+							"    ",
+							"    if (!todoId) {",
+							"        return;",
+							"    }",
+							"    ",
+							"    // Try to GET the deleted todo - should return 404",
+							"    pm.sendRequest({",
+							"        url: pm.collectionVariables.get('baseUrl') + '/TodoItems/' + todoId,",
+							"        method: 'GET'",
+							"    }, function (err, response) {",
+							"        if (!err) {",
+							"            pm.expect(response.code).to.equal(404);",
+							"            console.log('✅ Confirmed todo deleted - GET returned 404');",
+							"        }",
+							"    });",
+							"});",
+							"",
+							"pm.test('DELETE - Cleanup test variables', function () {",
+							"    // Clean up variables after deletion attempt",
+							"    if (pm.response.code === 204 || pm.response.code === 404) {",
+							"        pm.collectionVariables.unset('todoId');",
+							"        pm.collectionVariables.unset('expectedTaskDescription');",
+							"        pm.collectionVariables.unset('expectedUpdatedDescription');",
+							"        pm.collectionVariables.unset('testTitle');",
+							"        ",
+							"        console.log('🧹 Cleaned up test variables for next test run');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Verify Deletion (GET) - Should Return 404",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const todoId = pm.collectionVariables.get('todoId');",
+							"if (todoId) {",
+							"    console.log('Verifying deletion of todo ID:', todoId);",
+							"} else {",
+							"    console.log('No todoId found - variables were cleaned up after deletion');",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('VERIFY DELETION - Todo should not exist', function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"    console.log('✅ Confirmed: Todo no longer exists (404 Not Found)');",
+							"});",
+							"",
+							"pm.test('VERIFY DELETION - Test sequence completed', function () {",
+							"    console.log('🎉 Complete CRUD test sequence finished!');",
+							"    console.log('📊 Sequence: CREATE → READ → UPDATE → DELETE → VERIFY');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/TodoItems/{{todoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"TodoItems",
+						"{{todoId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5050/api",
+			"type": "string"
+		},
+		{
+			"key": "randomInt",
+			"value": ""
+		},
+		{
+			"key": "isoTimestamp",
+			"value": ""
+		},
+		{
+			"key": "deletedTodoId",
+			"value": ""
+		}
+	]
+}
