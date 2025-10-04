@@ -1,6 +1,7 @@
 name: Test Branch
 
 on:
+  workflow_dispatch: 
   push:
     branches:
       - 'fix/**'
