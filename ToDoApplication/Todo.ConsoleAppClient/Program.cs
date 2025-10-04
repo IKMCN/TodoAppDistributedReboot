@@ -1,8 +1,17 @@
-﻿using ToDoApp.ClassLibrary;
+﻿using Microsoft.Extensions.Configuration;
 
+using ToDoApp.ClassLibrary;
+
+// Build configuration
+var builder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+IConfiguration configuration = builder.Build();
+
+// Initialize services
 ITodoService todoService = new TodoService();
-//ITodoDataAccess todoDataAccess = new TodoDataAccess();//Text file storage
-ITodoDataAccess todoDataAccess = new TodoDatabaseDataAccess(); // Database implementation
+ITodoDataAccess todoDataAccess = new TodoDatabaseDataAccess(configuration);
 List<TodoModel> todoListitems = todoDataAccess.LoadTodoItems();
 
 bool keepRunning = true;
@@ -69,7 +78,6 @@ void MainMenuLogic(string operation)
                 var originalCount = todoListitems.Count;
                 todoListitems = todoService.UpdateTodoItem(todoListitems, updateId, newDescription);
 
-                // Check if item was found and updated
                 var updatedItem = todoListitems.FirstOrDefault(x => x.Id == updateId);
                 if (updatedItem != null && updatedItem.TaskDescription == newDescription)
                 {
