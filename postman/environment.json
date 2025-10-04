@@ -1,0 +1,10 @@
+{
+  "name": "Todo API Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5050",
+      "enabled": true
+    }
+  ]
+}

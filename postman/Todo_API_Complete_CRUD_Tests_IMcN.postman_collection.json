@@ -1,0 +1,434 @@
+{
+	"info": {
+		"_postman_id": "9abb0a76-ce6d-486b-a20c-38636a834805",
+		"name": "Todo API Complete CRUD Tests IMcN",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29635046",
+		"_collection_link": "https://brewery-api-team.postman.co/workspace/1d38cf3d-924f-4ef5-8a22-6c625a294c89/collection/29635046-9abb0a76-ce6d-486b-a20c-38636a834805?action=share&source=collection_link&creator=29635046"
+	},
+	"item": [
+		{
+			"name": "POST - New Single Todo - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Smoke Test: Verify successful creation (accept both 200 and 201)\r",
+							"pm.test(\"Status code is 200 or 201 (success)\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+							"});\r",
+							"\r",
+							"// Verify response has a body\r",
+							"pm.test(\"Response has a body\", function () {\r",
+							"    pm.response.to.have.body();\r",
+							"});\r",
+							"\r",
+							"// Verify response is JSON\r",
+							"pm.test(\"Response is JSON\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"// Basic structure check\r",
+							"pm.test(\"Response contains expected fields\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property('id');\r",
+							"    pm.expect(jsonData).to.have.property('taskDescription');\r",
+							"    pm.expect(jsonData).to.have.property('dateTimeCreated');\r",
+							"    pm.expect(jsonData).to.have.property('isComplete');\r",
+							"});\r",
+							"\r",
+							"// Verify the task description matches what we sent\r",
+							"pm.test(\"Task description matches input\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.taskDescription).to.eql(\"Buy groceries Ian again\");\r",
+							"});\r",
+							"\r",
+							"// Save the ID for use in other tests\r",
+							"pm.collectionVariables.set(\"createdTodoId\", pm.response.json().id);\r",
+							"console.log(\"Created todo with ID:\", pm.response.json().id);\r",
+							"\r",
+							"// Log the response for debugging\r",
+							"console.log(\"Response:\", pm.response.json());"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "     {\r\n       \"taskDescription\": \"Buy groceries Ian again\"\r\n     }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET - All Todos - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response is JSON array\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.be.an('array');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Array contains todo items (if any exist)\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    if (jsonData.length > 0) {\r",
+							"        pm.expect(jsonData[0]).to.have.property('id');\r",
+							"        pm.expect(jsonData[0]).to.have.property('taskDescription');\r",
+							"        pm.expect(jsonData[0]).to.have.property('dateTimeCreated');\r",
+							"        pm.expect(jsonData[0]).to.have.property('isComplete');\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"console.log(\"Total todos returned:\", pm.response.json().length);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET - Single Todo - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains todo with correct ID\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    var expectedId = pm.collectionVariables.get(\"createdTodoId\");\r",
+							"    \r",
+							"    pm.expect(jsonData).to.have.property('id');\r",
+							"    pm.expect(jsonData.id).to.eql(parseInt(expectedId));\r",
+							"    pm.expect(jsonData).to.have.property('taskDescription');\r",
+							"    pm.expect(jsonData).to.have.property('dateTimeCreated');\r",
+							"    pm.expect(jsonData).to.have.property('isComplete');\r",
+							"});\r",
+							"\r",
+							"console.log(\"Retrieved todo:\", pm.response.json().taskDescription);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems/{{createdTodoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems",
+						"{{createdTodoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT - Update Todo - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 204\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+							"});\r",
+							"\r",
+							"// If 200, might return updated object\r",
+							"if (pm.response.code === 200) {\r",
+							"    pm.test(\"Response contains updated data\", function () {\r",
+							"        var jsonData = pm.response.json();\r",
+							"        pm.expect(jsonData.taskDescription).to.include(\"milk\");\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"// If 204, no content is expected (success with empty body)\r",
+							"if (pm.response.code === 204) {\r",
+							"    pm.test(\"No content returned (expected for 204)\", function () {\r",
+							"        pm.expect(pm.response.text()).to.be.empty;\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"console.log(\"Update successful for ID:\", pm.collectionVariables.get(\"createdTodoId\"));"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"taskDescription\": \"Buy groceries and milk\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems/{{createdTodoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems",
+						"{{createdTodoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT - Mark Complete - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 204\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Request completed successfully\", function () {\r",
+							"    pm.response.to.not.be.error;\r",
+							"});\r",
+							"\r",
+							"console.log(\"Marked todo as complete. ID:\", pm.collectionVariables.get(\"createdTodoId\"));"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "   {\r\n     \"taskDescription\": \"Buy groceries and milk\",\r\n     \"isComplete\": true\r\n   }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems/{{createdTodoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems",
+						"{{createdTodoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT - Mark Incomplete - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 204\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Request completed successfully\", function () {\r",
+							"    pm.response.to.not.be.error;\r",
+							"});\r",
+							"\r",
+							"console.log(\"Marked todo as incomplete. ID:\", pm.collectionVariables.get(\"createdTodoId\"));"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "   {\r\n     \"taskDescription\": \"Buy groceries and milk\",\r\n     \"isComplete\": false\r\n   }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems/{{createdTodoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems",
+						"{{createdTodoId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE - Delete Todo - Smoke Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 or 204\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Delete completed successfully\", function () {\r",
+							"    pm.response.to.not.be.error;\r",
+							"});\r",
+							"\r",
+							"console.log(\"Deleted todo with ID:\", pm.collectionVariables.get(\"createdTodoId\"));\r",
+							"\r",
+							"// Clean up the variable\r",
+							"pm.collectionVariables.unset(\"createdTodoId\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/TodoItems/{{createdTodoId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"TodoItems",
+						"{{createdTodoId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "{{baseUrl}}",
+			"value": ""
+		},
+		{
+			"key": "baseUrl",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
