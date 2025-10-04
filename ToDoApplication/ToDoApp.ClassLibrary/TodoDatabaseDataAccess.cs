@@ -23,14 +23,56 @@ namespace ToDoApp.ClassLibrary
 
         public void SaveTodoItems(List<TodoModel> todoItems)
         {
-            // Simple approach: clear table and re-insert all items
             using var connection = new NpgsqlConnection(_connectionString);
-            connection.Execute("DELETE FROM todo_items");
-            foreach (var item in todoItems)
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+
+            try
             {
-                // NOTE: Still has the ID bug - not including id field
-                var sql = "INSERT INTO todo_items (task_description, datetime_created, is_complete) VALUES (@TaskDescription, @DateTimeCreated, @IsComplete)";
-                connection.Execute(sql, item);
+                // Get all existing IDs in the database
+                var existingIds = connection.Query<int>(
+                    "SELECT id FROM todo_items",
+                    transaction: transaction
+                ).ToHashSet();
+
+                var todoIds = todoItems.Select(t => t.Id).ToHashSet();
+
+                // UPDATE existing todos
+                foreach (var item in todoItems.Where(t => existingIds.Contains(t.Id)))
+                {
+                    var sql = @"UPDATE todo_items 
+                       SET task_description = @TaskDescription, 
+                           is_complete = @IsComplete,
+                           datetime_created = @DateTimeCreated
+                       WHERE id = @Id";
+                    connection.Execute(sql, item, transaction);
+                }
+
+                // INSERT new todos (only if they don't exist)
+                foreach (var item in todoItems.Where(t => !existingIds.Contains(t.Id)))
+                {
+                    var sql = @"INSERT INTO todo_items (id, task_description, datetime_created, is_complete) 
+                       VALUES (@Id, @TaskDescription, @DateTimeCreated, @IsComplete)";
+                    connection.Execute(sql, item, transaction);
+                }
+
+                // DELETE todos not in the list
+                var idsToDelete = existingIds.Except(todoIds).ToList();
+                if (idsToDelete.Any())
+                {
+                    connection.Execute(
+                        "DELETE FROM todo_items WHERE id = ANY(@Ids)",
+                        new { Ids = idsToDelete.ToArray() },
+                        transaction
+                    );
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
