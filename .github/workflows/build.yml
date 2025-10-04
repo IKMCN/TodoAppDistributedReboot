@@ -1,5 +1,4 @@
 name: Test Branch
-
 on:
   workflow_dispatch: 
   push:
@@ -8,7 +7,6 @@ on:
       - 'feature/**'
   pull_request:
     branches: [ main ]
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,7 +19,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test123
-          POSTGRES_DB: todoappfundametal_test
+          POSTGRES_USER: postgres
+          POSTGRES_DB: todoappfundamental_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -46,9 +45,8 @@ jobs:
       run: dotnet build ToDoApplication.sln --no-restore --configuration Release
     
     - name: Setup Database Schema
-      working-directory: ./
       run: |
-        PGPASSWORD=test123 psql -h localhost -U postgres -d todoappfundametal_test -c "
+        PGPASSWORD=test123 psql -h localhost -U postgres -d todoappfundamental_test -c "
         CREATE TABLE IF NOT EXISTS todo_items (
           id SERIAL PRIMARY KEY,
           task_description TEXT NOT NULL,
@@ -67,7 +65,7 @@ jobs:
         sleep 15
       env:
         ASPNETCORE_ENVIRONMENT: Development
-        ConnectionStrings__DefaultConnection: "Host=localhost;Database=todoappfundametal_test;Username=postgres;Password=test123"
+        ConnectionStrings__DefaultConnection: "Host=localhost;Database=todoappfundamental_test;Username=postgres;Password=test123"
     
     - name: Setup Node.js
       uses: actions/setup-node@v3
