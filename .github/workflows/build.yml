@@ -12,6 +12,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ToDoApplication
     
     services:
       postgres:
@@ -34,15 +37,16 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '9.0.x'
     
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ToDoApplication.sln
     
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build ToDoApplication.sln --no-restore --configuration Release
     
     - name: Setup Database Schema
+      working-directory: ./
       run: |
         PGPASSWORD=test123 psql -h localhost -U postgres -d todoappfundametal_test -c "
         CREATE TABLE IF NOT EXISTS todo_items (
@@ -53,12 +57,12 @@ jobs:
         );"
     
     - name: Run Unit Tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet test ToDoApplication.sln --no-build --configuration Release --verbosity normal
       continue-on-error: true
     
     - name: Start API in background
       run: |
-        dotnet run --project ./YourApiProject/YourApiProject.csproj --configuration Release &
+        dotnet run --project ./TodoAPI/TodoAPI.csproj --configuration Release &
         echo "Waiting for API to start..."
         sleep 15
       env:
@@ -74,5 +78,6 @@ jobs:
       run: npm install -g newman
     
     - name: Run Newman Tests
-      run: newman run ./postman/Todo_API_Complete_CRUD_Tests_IMcN.postman_collection.json --env-var "baseUrl=http://localhost:5050"
+      working-directory: ./
+      run: newman run ./ToDoApplication/postman/Todo_API_Complete_CRUD_Tests_IMcN.postman_collection.json --env-var "baseUrl=http://localhost:5050"
       continue-on-error: true
