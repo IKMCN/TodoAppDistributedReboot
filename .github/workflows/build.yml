@@ -73,5 +73,5 @@ jobs:
       run: npm install -g newman
     
     - name: Run Newman Tests
-      run: newman run ./postman/Todo_API_Complete_CRUD_Tests.json --env-var "baseUrl=http://localhost:5050"
+      run: newman run ./postman/Todo_API_Complete_CRUD_Tests_IMcN.postman_collection.json --env-var "baseUrl=http://localhost:5050"
       continue-on-error: true
