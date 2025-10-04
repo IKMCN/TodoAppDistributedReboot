@@ -29,7 +29,8 @@ namespace ToDoApp.ClassLibrary
             foreach (var item in todoItems)
             {
                 // NOTE: Still has the ID bug - not including id field
-                var sql = "INSERT INTO todo_items (task_description, datetime_created, is_complete) VALUES (@TaskDescription, @DateTimeCreated, @IsComplete)";
+                var sql = @"INSERT INTO todo_items (id, task_description, datetime_created, is_complete) 
+            VALUES (@Id, @TaskDescription, @DateTimeCreated, @IsComplete)";
                 connection.Execute(sql, item);
             }
         }
