@@ -1,12 +1,18 @@
 ﻿using Dapper;
 using Npgsql;
+using Microsoft.Extensions.Configuration;
 
 namespace ToDoApp.ClassLibrary
 {
     public class TodoDatabaseDataAccess : ITodoDataAccess
     {
-        private readonly string _connectionString = "Host=localhost;Database=todoappfundametal;Username=postgres;Password=test123";
-        //private readonly string _connectionString = "Host=192.168.1.118;Database=todoapp;Username=postgres;Password=test123";
+        private readonly string _connectionString;
+
+        // Constructor for dependency injection
+        public TodoDatabaseDataAccess(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
+        }
 
         public List<TodoModel> LoadTodoItems()
         {
@@ -20,9 +26,9 @@ namespace ToDoApp.ClassLibrary
             // Simple approach: clear table and re-insert all items
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Execute("DELETE FROM todo_items");
-
             foreach (var item in todoItems)
             {
+                // NOTE: Still has the ID bug - not including id field
                 var sql = "INSERT INTO todo_items (task_description, datetime_created, is_complete) VALUES (@TaskDescription, @DateTimeCreated, @IsComplete)";
                 connection.Execute(sql, item);
             }
@@ -31,18 +37,15 @@ namespace ToDoApp.ClassLibrary
         public TodoModel CreateTodoItem(string taskDescription)
         {
             using var connection = new NpgsqlConnection(_connectionString);
-
             var sql = @"INSERT INTO todo_items (task_description, datetime_created, is_complete) 
                 VALUES (@TaskDescription, @DateTimeCreated, @IsComplete) 
                 RETURNING id, task_description as TaskDescription, datetime_created as DateTimeCreated, is_complete as IsComplete";
-
             var newTodo = connection.QuerySingle<TodoModel>(sql, new
             {
                 TaskDescription = taskDescription,
                 DateTimeCreated = DateTime.UtcNow,
                 IsComplete = false
             });
-
             return newTodo;
         }
     }
