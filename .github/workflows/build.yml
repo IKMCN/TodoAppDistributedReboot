@@ -1,0 +1,77 @@
+name: Test Branch
+
+on:
+  push:
+    branches:
+      - 'fix/**'
+      - 'feature/**'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test123
+          POSTGRES_DB: todoappfundametal_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Setup Database Schema
+      run: |
+        PGPASSWORD=test123 psql -h localhost -U postgres -d todoappfundametal_test -c "
+        CREATE TABLE IF NOT EXISTS todo_items (
+          id SERIAL PRIMARY KEY,
+          task_description TEXT NOT NULL,
+          datetime_created TIMESTAMP NOT NULL,
+          is_complete BOOLEAN NOT NULL DEFAULT false
+        );"
+    
+    - name: Run Unit Tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+      continue-on-error: true
+    
+    - name: Start API in background
+      run: |
+        dotnet run --project ./YourApiProject/YourApiProject.csproj --configuration Release &
+        echo "Waiting for API to start..."
+        sleep 15
+      env:
+        ASPNETCORE_ENVIRONMENT: Development
+        ConnectionStrings__DefaultConnection: "Host=localhost;Database=todoappfundametal_test;Username=postgres;Password=test123"
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install Newman
+      run: npm install -g newman
+    
+    - name: Run Newman Tests
+      run: newman run ./postman/Todo_API_Complete_CRUD_Tests_IMcN.postman_collection.json --env-var "baseUrl=http://localhost:5050"
+      continue-on-error: true
